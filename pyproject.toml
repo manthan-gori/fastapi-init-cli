@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [
-    { name = "FastAPI Init Team" }
+    { name = "Manthan Gori" }
 ]
 keywords = ["fastapi", "cli", "scaffold", "generator", "async", "sqlalchemy", "jwt", "oauth"]
 classifiers = [
