@@ -1,0 +1,16 @@
+from fastapi import APIRouter
+
+from app.routes.v1.health import router as health_router
+{% if auth_enabled %}
+from app.routes.v1.auth import router as auth_router
+from app.routes.v1.users import router as users_router
+{% endif %}
+
+api_router = APIRouter()
+
+# API v1 routes
+api_router.include_router(health_router, prefix="/v1", tags=["Health"])
+{% if auth_enabled %}
+api_router.include_router(auth_router, prefix="/v1/auth", tags=["Authentication"])
+api_router.include_router(users_router, prefix="/v1/users", tags=["Users"])
+{% endif %}

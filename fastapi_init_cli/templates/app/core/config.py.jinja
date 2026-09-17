@@ -1,0 +1,47 @@
+from typing import Optional
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    # Application Settings
+    PROJECT_NAME: str = "{{ project_name }}"
+    ENVIRONMENT: str = "development"
+    DEBUG: bool = True
+
+    # Database Settings
+    DATABASE_URL: str = "{{ default_database_url }}"
+{% if auth_enabled %}
+
+    # JWT Authentication
+    JWT_SECRET_KEY: str = "super-secret-jwt-key-change-this-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+{% if include_google_oauth %}
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
+{% endif %}
+{% if needs_email_service %}
+
+    # Email & SMTP Settings
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    FROM_EMAIL: Optional[str] = None
+    OTP_EXPIRE_MINUTES: int = 10
+{% endif %}
+{% endif %}
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
+
+
+settings = Settings()

@@ -1,0 +1,39 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+{% if auth_enabled %}
+pydantic[email]>=2.7.0
+{% else %}
+pydantic>=2.7.0
+{% endif %}
+pydantic-settings>=2.2.0
+sqlalchemy>=2.0.30
+{% if database == 'PostgreSQL' %}
+{% if is_async %}
+asyncpg>=0.29.0
+{% else %}
+psycopg[binary]>=3.1.18
+{% endif %}
+{% elif database == 'MySQL' %}
+{% if is_async %}
+aiomysql>=0.2.0
+cryptography>=42.0.0
+{% else %}
+pymysql>=1.1.0
+cryptography>=42.0.0
+{% endif %}
+{% elif database == 'SQLite' %}
+{% if is_async %}
+aiosqlite>=0.20.0
+{% endif %}
+{% endif %}
+{% if include_alembic %}
+alembic>=1.13.1
+{% endif %}
+{% if auth_enabled %}
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.0.1
+python-multipart>=0.0.9
+{% if include_google_oauth %}
+httpx>=0.27.0
+{% endif %}
+{% endif %}

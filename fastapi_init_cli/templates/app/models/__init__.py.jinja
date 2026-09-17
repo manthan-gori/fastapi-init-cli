@@ -1,0 +1,17 @@
+from app.models.base import Base
+{% if auth_enabled %}
+from app.models.user import User
+{% endif %}
+{% if needs_otp_model %}
+from app.models.otp import OTP
+{% endif %}
+
+__all__ = [
+    "Base",
+{% if auth_enabled %}
+    "User",
+{% endif %}
+{% if needs_otp_model %}
+    "OTP",
+{% endif %}
+]

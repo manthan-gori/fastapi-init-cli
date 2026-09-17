@@ -1,0 +1,163 @@
+# {{ project_name }}
+
+A modern FastAPI backend built with {{ architecture }} {{ database }} & SQLAlchemy 2.0.
+
+---
+
+## Stack & Architecture
+
+- **Framework:** [FastAPI](https://fastapi.tiangolo.com/)
+- **Database:** {{ database }} (Driver: `{{ db_driver }}`)
+- **ORM:** SQLAlchemy 2.0 ({{ architecture }} Mode)
+{% if auth_enabled %}
+- **Authentication:** JWT (Access & Refresh Tokens)
+{% if include_google_oauth %}
+- **OAuth:** Google OAuth 2.0 Login Flow
+{% endif %}
+{% if include_email_verification %}
+- **Email Verification:** OTP-based
+{% endif %}
+{% if include_forgot_password %}
+- **Password Reset:** OTP-based
+{% endif %}
+{% endif %}
+{% if include_alembic %}
+- **Migrations:** Alembic ({{ architecture }} setup)
+{% endif %}
+
+---
+
+## Getting Started
+
+### 1. Create a Virtual Environment
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Environment Variables
+Copy `.env.example` to `.env` and fill in any necessary values:
+```bash
+cp .env.example .env
+```
+
+{% if include_alembic %}
+### 4. Database Migrations
+```bash
+# 1. Generate the initial migration from models
+alembic revision --autogenerate -m "Initial migration"
+
+# 2. Apply migrations to create database tables
+alembic upgrade head
+```
+
+### 5. Start Development Server
+{% else %}
+### 4. Start Development Server
+{% endif %}
+```bash
+uvicorn app.main:app --reload
+```
+
+Interactive API documentation will be available at:
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/health` | Health check endpoint | No |
+{% if auth_enabled %}
+| `POST` | `/api/v1/auth/register` | Register a new user | No |
+| `POST` | `/api/v1/auth/login` | Log in and receive JWT tokens | No |
+| `POST` | `/api/v1/auth/refresh` | Refresh access token | No |
+{% if include_email_verification %}
+| `POST` | `/api/v1/auth/verify-email` | Verify account with OTP | No |
+| `POST` | `/api/v1/auth/resend-otp` | Resend verification OTP | No |
+{% endif %}
+{% if include_forgot_password %}
+| `POST` | `/api/v1/auth/forgot-password` | Request password reset OTP | No |
+| `POST` | `/api/v1/auth/reset-password` | Reset password using OTP | No |
+{% endif %}
+{% if include_google_oauth %}
+| `GET` | `/api/v1/auth/google/url` | Get Google OAuth authorization URL | No |
+| `GET` | `/api/v1/auth/google/callback` | Google OAuth callback handler | No |
+{% endif %}
+| `GET` | `/api/v1/users/me` | Get current authenticated user profile | **Yes (Bearer)** |
+| `PATCH` | `/api/v1/users/me` | Update current user profile | **Yes (Bearer)** |
+{% endif %}
+
+---
+
+## Project Structure
+
+```
+{{ project_name }}/
+├── .env
+├── .env.example
+├── .gitignore
+├── README.md
+├── requirements.txt
+{% if include_alembic %}
+├── alembic.ini
+├── alembic/
+{% endif %}
+└── app/
+    ├── main.py
+    ├── core/
+    │   ├── config.py
+    │   ├── database.py
+    │   ├── dependencies.py
+    {% if auth_enabled %}
+    │   └── security.py
+    {% endif %}
+    ├── models/
+    │   ├── base.py
+    {% if auth_enabled %}
+    │   ├── user.py
+    {% endif %}
+    {% if needs_otp_model %}
+    │   └── otp.py
+    {% endif %}
+    ├── schemas/
+    {% if auth_enabled %}
+    │   ├── auth.py
+    │   ├── user.py
+    {% endif %}
+    {% if needs_otp_model %}
+    │   └── otp.py
+    {% endif %}
+    ├── services/
+    {% if auth_enabled %}
+    │   ├── auth_service.py
+    │   └── user_service.py
+    {% endif %}
+    {% if needs_otp_model %}
+    │   └── otp_service.py
+    {% endif %}
+    {% if needs_email_service %}
+    │   └── email_service.py
+    {% endif %}
+    └── routes/
+        ├── router.py
+        └── v1/
+            ├── health.py
+            {% if auth_enabled %}
+            ├── auth.py
+            └── users.py
+            {% endif %}
+```
+
+---
+
+<div align="center">
+  <sub>Generated with <a href="https://pypi.org/project/fastapi-init-cli/"><b>fastapi-init-cli</b></a> by <a href="https://www.linkedin.com/in/manthan-gori/"><b>Manthan Gori</b></a></sub>
+</div>

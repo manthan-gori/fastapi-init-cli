@@ -1,0 +1,154 @@
+from typing import Optional
+from sqlalchemy import select
+{% if is_async %}
+from sqlalchemy.ext.asyncio import AsyncSession
+{% else %}
+from sqlalchemy.orm import Session
+{% endif %}
+
+from app.core.security import get_password_hash
+from app.models.user import User
+from app.schemas.user import UserCreate, UserUpdate
+
+
+class UserService:
+    """Service layer for User database operations."""
+
+    def __init__(self, db: {% if is_async %}AsyncSession{% else %}Session{% endif %}) -> None:
+        self.db = db
+
+{% if is_async %}
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        """Fetch user by primary key ID."""
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        """Fetch user by email address."""
+        result = await self.db.execute(select(User).where(User.email == email.lower()))
+        return result.scalar_one_or_none()
+
+    async def create(self, user_in: UserCreate, is_verified: bool = False) -> User:
+        """Create a new user with hashed password."""
+        user = User(
+            first_name=user_in.first_name,
+            last_name=user_in.last_name,
+            email=user_in.email.lower(),
+            hashed_password=get_password_hash(user_in.password),
+            is_verified=is_verified,
+        )
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def create_oauth_user(self, email: str, first_name: str, last_name: str) -> User:
+        """Create a new user authenticated via OAuth."""
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            email=email.lower(),
+            hashed_password=None,
+            is_verified=True,
+        )
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def update(self, user: User, user_in: UserUpdate) -> User:
+        """Update user profile fields."""
+        if user_in.first_name is not None:
+            user.first_name = user_in.first_name
+        if user_in.last_name is not None:
+            user.last_name = user_in.last_name
+        if user_in.password is not None:
+            user.hashed_password = get_password_hash(user_in.password)
+        
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def mark_verified(self, user: User) -> User:
+        """Mark a user account as email verified."""
+        user.is_verified = True
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def update_password(self, user: User, new_plain_password: str) -> User:
+        """Update user password with newly hashed value."""
+        user.hashed_password = get_password_hash(new_plain_password)
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+{% else %}
+    def get_by_id(self, user_id: int) -> Optional[User]:
+        """Fetch user by primary key ID."""
+        return self.db.execute(select(User).where(User.id == user_id)).scalar_one_or_none()
+
+    def get_by_email(self, email: str) -> Optional[User]:
+        """Fetch user by email address."""
+        return self.db.execute(select(User).where(User.email == email.lower())).scalar_one_or_none()
+
+    def create(self, user_in: UserCreate, is_verified: bool = False) -> User:
+        """Create a new user with hashed password."""
+        user = User(
+            first_name=user_in.first_name,
+            last_name=user_in.last_name,
+            email=user_in.email.lower(),
+            hashed_password=get_password_hash(user_in.password),
+            is_verified=is_verified,
+        )
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def create_oauth_user(self, email: str, first_name: str, last_name: str) -> User:
+        """Create a new user authenticated via OAuth."""
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            email=email.lower(),
+            hashed_password=None,
+            is_verified=True,
+        )
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def update(self, user: User, user_in: UserUpdate) -> User:
+        """Update user profile fields."""
+        if user_in.first_name is not None:
+            user.first_name = user_in.first_name
+        if user_in.last_name is not None:
+            user.last_name = user_in.last_name
+        if user_in.password is not None:
+            user.hashed_password = get_password_hash(user_in.password)
+        
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def mark_verified(self, user: User) -> User:
+        """Mark a user account as email verified."""
+        user.is_verified = True
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def update_password(self, user: User, new_plain_password: str) -> User:
+        """Update user password with newly hashed value."""
+        user.hashed_password = get_password_hash(new_plain_password)
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+{% endif %}

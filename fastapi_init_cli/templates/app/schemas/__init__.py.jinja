@@ -1,0 +1,16 @@
+{% if auth_enabled %}
+from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.schemas.auth import Token, TokenPayload, LoginRequest, RefreshTokenRequest
+{% if include_google_oauth %}
+from app.schemas.auth import GoogleLoginResponse, GoogleAuthUrlResponse
+{% endif %}
+{% if needs_otp_model %}
+from app.schemas.otp import (
+    VerifyEmailRequest,
+    ResendOTPRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    MessageResponse,
+)
+{% endif %}
+{% endif %}

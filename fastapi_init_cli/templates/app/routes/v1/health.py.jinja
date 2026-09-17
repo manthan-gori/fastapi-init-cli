@@ -1,0 +1,10 @@
+from typing import Dict
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.get("/health", summary="Health Check")
+async def health_check() -> Dict[str, str]:
+    """Return health status of the application."""
+    return {"status": "ok", "message": "Service is healthy"}

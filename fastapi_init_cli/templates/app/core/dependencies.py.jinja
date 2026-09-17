@@ -1,0 +1,111 @@
+from typing import Optional
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError
+{% if is_async %}
+from sqlalchemy.ext.asyncio import AsyncSession
+{% else %}
+from sqlalchemy.orm import Session
+{% endif %}
+
+from app.core.database import get_db
+{% if auth_enabled %}
+from app.core.security import decode_token
+from app.models.user import User
+from app.services.user_service import UserService
+
+security = HTTPBearer(auto_error=False)
+
+
+{% if is_async %}
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Validate bearer token and retrieve current authenticated user."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not credentials:
+        raise credentials_exception
+
+    token = credentials.credentials
+    payload = decode_token(token)
+    if payload is None:
+        raise credentials_exception
+
+    token_type = payload.get("type")
+    if token_type != "access":
+        raise credentials_exception
+
+    user_id: Optional[str] = payload.get("sub")
+    if user_id is None:
+        raise credentials_exception
+
+    user_service = UserService(db)
+    user = await user_service.get_by_id(int(user_id))
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+async def get_current_verified_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Ensure the authenticated user has verified their email."""
+    if not current_user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email address is not verified",
+        )
+    return current_user
+{% else %}
+def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db),
+) -> User:
+    """Validate bearer token and retrieve current authenticated user."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not credentials:
+        raise credentials_exception
+
+    token = credentials.credentials
+    payload = decode_token(token)
+    if payload is None:
+        raise credentials_exception
+
+    token_type = payload.get("type")
+    if token_type != "access":
+        raise credentials_exception
+
+    user_id: Optional[str] = payload.get("sub")
+    if user_id is None:
+        raise credentials_exception
+
+    user_service = UserService(db)
+    user = user_service.get_by_id(int(user_id))
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+def get_current_verified_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Ensure the authenticated user has verified their email."""
+    if not current_user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email address is not verified",
+        )
+    return current_user
+{% endif %}
+{% endif %}

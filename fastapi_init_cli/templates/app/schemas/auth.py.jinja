@@ -1,0 +1,36 @@
+from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr = Field(..., examples=["jane.doe@example.com"])
+    password: str = Field(..., examples=["password"])
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(..., description="Valid refresh token")
+
+
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class TokenPayload(BaseModel):
+    sub: Optional[str] = None
+    type: Optional[str] = None
+    exp: Optional[int] = None
+{% if include_google_oauth %}
+
+
+class GoogleAuthUrlResponse(BaseModel):
+    auth_url: str
+
+
+class GoogleLoginResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    is_new_user: bool = False
+{% endif %}

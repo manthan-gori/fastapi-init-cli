@@ -1,0 +1,21 @@
+{% if auth_enabled %}
+from app.services.user_service import UserService
+from app.services.auth_service import AuthService
+{% if needs_email_service %}
+from app.services.email_service import EmailService
+{% endif %}
+{% if needs_otp_model %}
+from app.services.otp_service import OTPService
+{% endif %}
+
+__all__ = [
+    "UserService",
+    "AuthService",
+{% if needs_email_service %}
+    "EmailService",
+{% endif %}
+{% if needs_otp_model %}
+    "OTPService",
+{% endif %}
+]
+{% endif %}

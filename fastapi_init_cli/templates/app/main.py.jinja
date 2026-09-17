@@ -1,0 +1,58 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.config import settings
+from app.routes.router import api_router
+{% if not include_alembic %}
+from app.core.database import engine
+from app.models.base import Base
+{% if auth_enabled or include_auth %}
+import app.models.user  # noqa: F401
+{% if needs_otp_model or include_email_otp or include_forgot_password %}
+import app.models.otp  # noqa: F401
+{% endif %}
+{% endif %}
+{% endif %}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup tasks
+    {% if not include_alembic %}
+    {% if is_async %}
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    {% else %}
+    Base.metadata.create_all(bind=engine)
+    {% endif %}
+    {% endif %}
+    yield
+    # Shutdown tasks
+
+
+def create_application() -> FastAPI:
+    """Create and configure the FastAPI application."""
+    application = FastAPI(
+        title=settings.PROJECT_NAME,
+        version="0.1.0",
+        debug=settings.DEBUG,
+        lifespan=lifespan,
+    )
+
+    # CORS Middleware
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Mount master router
+    application.include_router(api_router, prefix="/api")
+
+    return application
+
+
+app = create_application()
